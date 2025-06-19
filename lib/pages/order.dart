@@ -12,7 +12,7 @@ class OrderListWidget extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       child: GridView.builder(
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 10, // 2 items per row
+          crossAxisCount: 2, // 2 items per row
           crossAxisSpacing: 10,
           mainAxisSpacing: 10,
           childAspectRatio: 3 / 2, // width / height ratio
@@ -31,13 +31,19 @@ class OrderListWidget extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(order.name,
-                      style: Theme.of(context).textTheme.titleMedium),
+                  Text(
+                    order.name,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 8),
-                  Text('Price: \$${order.price}',
-                      style: Theme.of(context).textTheme.bodySmall),
-                  Text('Sales: ${order.sales}',
-                      style: Theme.of(context).textTheme.bodySmall),
+                  Text(
+                    'Price: \$${order.price}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  Text(
+                    'Sales: ${order.sales}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                 ],
               ),
             ),
