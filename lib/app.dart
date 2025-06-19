@@ -13,9 +13,26 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Namer App',
+      title: 'TableGo',
       theme: ThemeData(
+        useMaterial3: false, // or false, depending on preference
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
+        bottomNavigationBarTheme: BottomNavigationBarThemeData(
+          backgroundColor: Colors.grey[900],
+          selectedItemColor: Colors.deepOrange,
+          unselectedItemColor: Colors.white70,
+        ),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.deepOrange, // AppBar background
+          foregroundColor: Colors.white, // Icon & text color
+          elevation: 4, // Shadow depth
+          centerTitle: true, // Centered title
+          titleTextStyle: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
       ),
       home: const MyHomePage(),
     );
@@ -31,13 +48,92 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   var selectedIndex = 0;
-
   late final List<Order> orders;
+  String selectedFilter = 'all';
+  final List<String> filters = ['all', 'foods', 'drinks', 'menu'];
 
   @override
   void initState() {
     super.initState();
     orders = Order.generateList(50); // generate 10 random orders
+  }
+
+  Widget buildFilterRow() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: filters.map((filter) {
+          final isSelected = selectedFilter == filter;
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4.0),
+            child: ChoiceChip(
+              label: Text(filter),
+              selected: isSelected,
+              onSelected: (_) {
+                setState(() {
+                  selectedFilter = filter;
+                });
+              },
+              selectedColor: Colors.deepOrange,
+              backgroundColor: Colors.grey[300],
+              labelStyle: TextStyle(
+                color: isSelected ? Colors.white : Colors.black,
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildNavItem(IconData icon, String label, int index) {
+    final isSelected = selectedIndex == index;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          selectedIndex = index;
+        });
+      },
+      child: TweenAnimationBuilder<double>(
+        tween: Tween<double>(
+          begin: isSelected ? 1.0 : 0.8,
+          end: isSelected ? 1.2 : 1.0,
+        ),
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutBack,
+        builder: (context, scale, child) {
+          return Transform.scale(
+            scale: scale,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ShaderMask(
+                  shaderCallback: (bounds) => const LinearGradient(
+                    colors: [Colors.white, Colors.yellowAccent],
+                  ).createShader(bounds),
+                  child: Icon(icon, size: 26, color: Colors.white),
+                ),
+                const SizedBox(height: 4),
+                AnimatedDefaultTextStyle(
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : Colors.white70,
+                    fontSize: 12,
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                  ),
+                  duration: const Duration(milliseconds: 200),
+                  child: Text(label),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
   }
 
   // Routing pages through selectedIndex.
@@ -48,7 +144,7 @@ class _MyHomePageState extends State<MyHomePage> {
     Widget page;
     switch (selectedIndex) {
       case 0:
-        page = OrderListWidget(orders: orders);
+        page = OrderListWidget(orders: orders, filter: selectedFilter);
         break;
       case 1:
         page = Payment();
@@ -68,29 +164,47 @@ class _MyHomePageState extends State<MyHomePage> {
         if (deviceType == DeviceType.mobile) {
           // Use BottomNavigationBar for mobile
           return Scaffold(
-            body: page,
-            bottomNavigationBar: BottomNavigationBar(
-              currentIndex: selectedIndex,
-              onTap: (value) {
-                setState(() {
-                  selectedIndex = value;
-                });
-              },
-              items: const [
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.list_alt),
-                  label: 'Orders',
+            appBar: AppBar(
+              title: const Text('TableGo'),
+              flexibleSpace: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.deepOrange, Colors.orangeAccent],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                 ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.credit_card),
-                  label: 'Payments',
+              ),
+            ),
+            body: Column(
+              children: [
+                if (selectedIndex == 0) buildFilterRow(),
+                if (selectedIndex == 0) const Divider(height: 1),
+                Expanded(
+                  child: selectedIndex == 0
+                      ? OrderListWidget(orders: orders, filter: selectedFilter)
+                      : page,
                 ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.microwave),
-                  label: 'Prepare',
-                ),
-                BottomNavigationBarItem(icon: Icon(Icons.done), label: 'Done'),
               ],
+            ),
+            bottomNavigationBar: Container(
+              height: 70,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.deepOrange, Colors.orangeAccent],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildNavItem(Icons.list_alt, 'Orders', 0),
+                  _buildNavItem(Icons.credit_card, 'Payments', 1),
+                  _buildNavItem(Icons.microwave, 'Prepare', 2),
+                  _buildNavItem(Icons.done, 'Done', 3),
+                ],
+              ),
             ),
           );
         } else {

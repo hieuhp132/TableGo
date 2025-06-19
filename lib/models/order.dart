@@ -1,65 +1,90 @@
 import 'dart:math';
 
-/// A simple Order model with random generation support.
 class Order {
   final String name;
   final double price;
   final int sales;
+  final String category; // New
 
   Order({
     required this.name,
     required this.price,
     required this.sales,
+    required this.category,
   });
 
-  /// Generates a random Order using predefined sample data.
   factory Order.random() {
+    final name = _sampleNames[_random.nextInt(_sampleNames.length)];
+    final category = _foodNames.contains(name) ? 'foods' : 'drinks';
+
     return Order(
-      name: _sampleNames[_random.nextInt(_sampleNames.length)],
+      name: name,
       price: double.parse(((_random.nextDouble() * 50) + 1).toStringAsFixed(2)),
-      sales: _random.nextInt(500),
+      sales: _random.nextInt(100),
+      category: category,
     );
   }
 
-  /// Generates a list of random orders.
-  static List<Order> generateList(int count) {
-    return List.generate(count, (_) => Order.random());
+  static List<Order> generateList(int count) =>
+      List.generate(count, (_) => Order.random());
+
+  static List<Order> filterOrders(List<Order> orders, String category) {
+    switch (category.toLowerCase()) {
+      case 'foods':
+        return orders.where((o) => o.category == 'foods').toList();
+      case 'drinks':
+        return orders.where((o) => o.category == 'drinks').toList();
+      case 'menu':
+        final foods = orders.where((o) => o.category == 'foods').toList();
+        final drinks = orders.where((o) => o.category == 'drinks').toList();
+
+        final int comboCount = min(foods.length, drinks.length);
+        final List<Order> combos = [];
+
+        for (int i = 0; i < comboCount; i++) {
+          final food = foods[i];
+          final drink = drinks[i];
+
+          final comboName = '${food.name} + ${drink.name}';
+          final comboSales = min(food.sales, drink.sales);
+          final comboPrice =
+              (food.price * comboSales / 100) +
+              (drink.price * comboSales / 100);
+
+          combos.add(
+            Order(
+              name: comboName,
+              price: comboPrice,
+              sales: comboSales,
+              category: 'menu',
+            ),
+          );
+        }
+
+        return combos;
+
+      case 'all':
+      default:
+        return orders;
+    }
   }
 
-  @override
-  String toString() =>
-      'Order(name: "$name", price: \$${price.toStringAsFixed(2)}, sales: $sales)';
-
-  /// Serialization
-  factory Order.fromJson(Map<String, dynamic> json) {
-    return Order(
-      name: json['name'] as String,
-      price: (json['price'] as num).toDouble(),
-      sales: json['sales'] as int,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'name': name,
-      'price': price,
-      'sales': sales,
-    };
-  }
-
-  // Static variables for reuse
   static final _random = Random();
 
-  static const _sampleNames = [
-    'Espresso',
-    'Cappuccino',
-    'Latte',
-    'Green Tea',
+  static const _foodNames = [
     'Bagel',
     'Cheesecake',
     'Sandwich',
     'Salad',
-    'Smoothie',
     'Muffin',
   ];
+  static const _drinkNames = [
+    'Espresso',
+    'Cappuccino',
+    'Latte',
+    'Green Tea',
+    'Smoothie',
+  ];
+
+  static const _sampleNames = [..._foodNames, ..._drinkNames];
 }
