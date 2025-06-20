@@ -1,4 +1,6 @@
+import 'package:fapp/models/app_state.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/order.dart';
 
 class OrderListWidget extends StatefulWidget {
@@ -16,24 +18,30 @@ class OrderListWidget extends StatefulWidget {
 }
 
 class _OrderListWidgetState extends State<OrderListWidget> {
-  final List<Order> addedItems = [];
+  //final List<Order> addedItems = [];
+
   bool cartVisible = false;
   bool isDragging = false;
 
   void _addItem(Order order) {
     setState(() {
-      addedItems.add(order);
+      final appState = context.read<MyAppState>();
+      appState.addItem(order);
       if (!cartVisible) cartVisible = true; // Auto-show cart after first add
     });
   }
 
-  void _removeItem(int index) {
-    setState(() => addedItems.removeAt(index));
+  void _removeItem(Order order) {
+    final appState = context.read<MyAppState>();
+    appState.removeItem(order);
   }
 
   void _toggleCart() => setState(() => cartVisible = !cartVisible);
 
-  double get totalPrice => addedItems.fold(0, (sum, item) => sum + item.price);
+  double get totalPrice => context.watch<MyAppState>().addedItems.fold(
+    0,
+    (sum, item) => sum + item.price,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -52,10 +60,12 @@ class _OrderListWidgetState extends State<OrderListWidget> {
           ),
 
           // Show cart button (only if hidden and has items)
-          if (!cartVisible && addedItems.isNotEmpty) _buildShowCartButton(),
+          if (!cartVisible && context.watch<MyAppState>().addedItems.isNotEmpty)
+            _buildShowCartButton(),
 
           // Cart sheet (only if visible and has items)
-          if (cartVisible && addedItems.isNotEmpty) _buildCartSheet(),
+          if (cartVisible && context.watch<MyAppState>().addedItems.isNotEmpty)
+            _buildCartSheet(),
         ],
       ),
     );
@@ -163,9 +173,11 @@ class _OrderListWidgetState extends State<OrderListWidget> {
                     controller: scrollController,
                     child: ListView.builder(
                       controller: scrollController,
-                      itemCount: addedItems.length,
+                      itemCount: context.watch<MyAppState>().addedItems.length,
                       itemBuilder: (context, index) {
-                        final item = addedItems[index];
+                        final item = context
+                            .watch<MyAppState>()
+                            .addedItems[index];
                         return ListTile(
                           title: Text(item.name),
                           subtitle: Text('Sales: ${item.sales}'),
@@ -174,7 +186,7 @@ class _OrderListWidgetState extends State<OrderListWidget> {
                               Icons.delete,
                               color: Colors.redAccent,
                             ),
-                            onPressed: () => _removeItem(index),
+                            onPressed: () => _removeItem(item),
                           ),
                         );
                       },
