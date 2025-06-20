@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'pages/order.dart';
-import 'pages/payment.dart';
+import 'pages/payments/index.dart';
 import 'pages/prepare.dart';
 import 'pages/ready.dart';
 
@@ -147,7 +147,7 @@ class _MyHomePageState extends State<MyHomePage> {
         page = OrderListWidget(orders: orders, filter: selectedFilter);
         break;
       case 1:
-        page = Payment();
+        page = PaymentPage();
         break;
       case 2:
         page = Prepare();

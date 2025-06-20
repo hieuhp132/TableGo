@@ -4,13 +4,15 @@ class Order {
   final String name;
   final double price;
   final int sales;
-  final String category; // New
+  final String category;
+  String status; // 'new', 'preparing', 'ready'
 
   Order({
     required this.name,
     required this.price,
     required this.sales,
     required this.category,
+    this.status = 'new', // default value
   });
 
   factory Order.random() {
@@ -22,6 +24,7 @@ class Order {
       price: double.parse(((_random.nextDouble() * 50) + 1).toStringAsFixed(2)),
       sales: _random.nextInt(100),
       category: category,
+      status: 'new', // all new orders default to "preparing"
     );
   }
 
@@ -57,6 +60,7 @@ class Order {
               price: comboPrice,
               sales: comboSales,
               category: 'menu',
+              status: 'new',
             ),
           );
         }

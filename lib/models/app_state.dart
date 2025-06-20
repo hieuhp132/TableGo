@@ -1,22 +1,48 @@
-import 'package:english_words/english_words.dart';
-import 'package:fapp/models/order.dart';
 import 'package:flutter/material.dart';
+import 'order.dart';
 
 class MyAppState extends ChangeNotifier {
-  var current = Order.random();
-  var favorites = <Order>[];
+  final List<Order> _addedItems = [];
+  bool isOrderProcessing = false;
 
-  void getNext() {
-    current = Order.random();
+  List<Order> get addedItems => List.unmodifiable(_addedItems);
+
+  void addItem(Order order) {
+    _addedItems.add(order);
     notifyListeners();
   }
 
-  void toggleFavorite() {
-    if (favorites.contains(current)) {
-      favorites.remove(current);
-    } else {
-      favorites.add(current);
+  void removeItem(Order order) {
+    _addedItems.remove(order);
+    notifyListeners();
+  }
+
+  void clearItems() {
+    _addedItems.clear();
+    notifyListeners();
+  }
+
+  void markOrderProcessing() {
+    for (var item in addedItems) {
+      item.status = 'preparing';
     }
     notifyListeners();
+    _simulatePreparation();
+  }
+
+  void clearCart() {
+    addedItems.clear();
+    notifyListeners();
+  }
+
+  void _simulatePreparation() {
+    Future.delayed(const Duration(seconds: 10), () {
+      for (var item in addedItems) {
+        if (item.status == 'preparing') {
+          item.status = 'ready';
+        }
+      }
+      notifyListeners();
+    });
   }
 }
