@@ -18,17 +18,17 @@ class OrderListWidget extends StatefulWidget {
 }
 
 class _OrderListWidgetState extends State<OrderListWidget> {
-  //final List<Order> addedItems = [];
-
   bool cartVisible = false;
   bool isDragging = false;
 
   void _addItem(Order order) {
-    setState(() {
-      final appState = context.read<MyAppState>();
-      appState.addItem(order);
-      if (!cartVisible) cartVisible = true; // Auto-show cart after first add
-    });
+    final appState = context.read<MyAppState>();
+    appState.addItem(order);
+    if (!cartVisible) {
+      setState(() {
+        cartVisible = true;
+      });
+    }
   }
 
   void _removeItem(Order order) {
@@ -46,27 +46,29 @@ class _OrderListWidgetState extends State<OrderListWidget> {
   @override
   Widget build(BuildContext context) {
     final filteredOrders = Order.filterOrders(widget.orders, widget.filter);
+    final bottomPadding = MediaQuery.of(context).padding.bottom + 100;
 
     return Scaffold(
       backgroundColor: Colors.grey[100],
-      body: Stack(
-        children: [
-          // Order list
-          ListView.builder(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-            itemCount: filteredOrders.length,
-            itemBuilder: (context, index) =>
-                _buildOrderCard(filteredOrders[index]),
-          ),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            ListView.builder(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, bottomPadding),
+              itemCount: filteredOrders.length,
+              itemBuilder: (context, index) =>
+                  _buildOrderCard(filteredOrders[index]),
+            ),
 
-          // Show cart button (only if hidden and has items)
-          if (!cartVisible && context.watch<MyAppState>().addedItems.isNotEmpty)
-            _buildShowCartButton(),
+            if (!cartVisible &&
+                context.watch<MyAppState>().addedItems.isNotEmpty)
+              _buildShowCartButton(),
 
-          // Cart sheet (only if visible and has items)
-          if (cartVisible && context.watch<MyAppState>().addedItems.isNotEmpty)
-            _buildCartSheet(),
-        ],
+            if (cartVisible &&
+                context.watch<MyAppState>().addedItems.isNotEmpty)
+              _buildCartSheet(),
+          ],
+        ),
       ),
     );
   }
@@ -95,7 +97,7 @@ class _OrderListWidgetState extends State<OrderListWidget> {
   Widget _buildShowCartButton() {
     return Positioned(
       bottom: 24,
-      right: MediaQuery.of(context).size.width / 2 - 28, // center horizontally
+      right: MediaQuery.of(context).size.width / 2 - 28,
       child: FloatingActionButton.small(
         backgroundColor: Colors.deepOrange,
         onPressed: _toggleCart,
@@ -111,119 +113,107 @@ class _OrderListWidgetState extends State<OrderListWidget> {
       minChildSize: 0.25,
       maxChildSize: 0.85,
       builder: (context, scrollController) {
-        return NotificationListener<DraggableScrollableNotification>(
-          onNotification: (notification) {
-            setState(() {
-              isDragging =
-                  notification.extent != notification.minExtent &&
-                  notification.extent != notification.maxExtent;
-            });
-            return true;
-          },
-          child: Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-              boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6)],
-            ),
-            child: Column(
-              children: [
-                // Drag handle
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  child: Container(
-                    width: 40,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ),
-                ),
-
-                // Header Row: "Your Cart" + close button
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          'Your Cart',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                          ),
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+            boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6)],
+          ),
+          child: CustomScrollView(
+            controller: scrollController,
+            slivers: [
+              SliverToBoxAdapter(
+                child: Column(
+                  children: [
+                    // Drag handle
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: Container(
+                        width: 40,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(3),
                         ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.keyboard_arrow_down),
-                        onPressed: _toggleCart,
-                        color: Colors.deepOrange,
-                        tooltip: 'Close Cart',
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(),
+                    ),
 
-                // Scrollable cart list
-                Expanded(
-                  child: Scrollbar(
-                    thumbVisibility: true,
-                    controller: scrollController,
-                    child: ListView.builder(
-                      controller: scrollController,
-                      itemCount: context.watch<MyAppState>().addedItems.length,
-                      itemBuilder: (context, index) {
-                        final item = context
-                            .watch<MyAppState>()
-                            .addedItems[index];
-                        return ListTile(
-                          title: Text(item.name),
-                          subtitle: Text('Sales: ${item.sales}'),
-                          trailing: IconButton(
-                            icon: const Icon(
-                              Icons.delete,
-                              color: Colors.redAccent,
+                    // Header
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        children: [
+                          const Expanded(
+                            child: Text(
+                              'Your Cart',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
                             ),
-                            onPressed: () => _removeItem(item),
                           ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-
-                const Divider(),
-                Padding(
-                  padding: const EdgeInsets.only(
-                    top: 6,
-                    bottom: 12,
-                    left: 16,
-                    right: 16,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Total:',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+                          IconButton(
+                            icon: const Icon(Icons.keyboard_arrow_down),
+                            onPressed: _toggleCart,
+                            color: Colors.deepOrange,
+                          ),
+                        ],
                       ),
-                      Text(
-                        '\$${totalPrice.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    ),
+                    const Divider(),
+                  ],
+                ),
+              ),
+
+              // Scrollable list
+              SliverList(
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final item = context.watch<MyAppState>().addedItems[index];
+                  return ListTile(
+                    title: Text(item.name),
+                    subtitle: Text('Sales: ${item.sales}'),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.redAccent),
+                      onPressed: () => _removeItem(item),
+                    ),
+                  );
+                }, childCount: context.watch<MyAppState>().addedItems.length),
+              ),
+
+              // Total
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  child: Column(
+                    children: [
+                      const Divider(),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Total:',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            '\$${totalPrice.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         );
       },
